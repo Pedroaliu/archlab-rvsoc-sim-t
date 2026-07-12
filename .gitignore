@@ -1,0 +1,47 @@
+# CMake build trees
+/build/
+/build-*/
+/cmake-build-*/
+/out/
+
+# CMake generated files when configured in-source by mistake
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# IDEs and editors
+.idea/
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+
+# Compiler and linker outputs
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Runtime output
+*.log
+/results/
+/traces/
+/checkpoints/
+
+# Coverage and profiling
+*.gcda
+*.gcno
+*.gcov
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
