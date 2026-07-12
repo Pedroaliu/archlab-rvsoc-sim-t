@@ -16,7 +16,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(ProjectOptions)
 
-add_library(archlab_sim STATIC)
+add_library(archlab_sim STATIC
+        include/archlab/sim/kernel/sim_time.h)
 add_library(archlab::sim ALIAS archlab_sim)
 
 target_sources(

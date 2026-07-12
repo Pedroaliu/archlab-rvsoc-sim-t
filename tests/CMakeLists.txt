@@ -4,6 +4,7 @@ add_executable(
     test_address_space.cpp
     test_event_queue.cpp
     test_stats_and_core.cpp
+    test_sim_time.cpp
 )
 
 target_link_libraries(archlab-tests PRIVATE archlab::sim)
