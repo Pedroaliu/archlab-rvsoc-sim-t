@@ -1,42 +1,65 @@
 # ArchLab RVSoC-Sim
 
-A clean, research-oriented foundation for learning and experimenting with RISC-V CPU and
+A clean, learning-first, research-oriented foundation for studying modern RISC-V CPU and complete
 SoC simulation.
 
-This repository starts from **Milestone 0.1.0: Project Foundation**. The earlier lab-style
-repository remains useful as learning history, but this project is organized as a long-lived
-software project from the beginning.
+This repository starts from **Milestone 0.1.0: Project Foundation**. The earlier lab-style repository
+remains useful as learning history, but this project is organized as a long-lived software project
+from the beginning.
 
-## Long-term goal
+## Purpose
 
 Build an extensible full-system simulator that can eventually support:
 
 - functional, timing, transaction-level, and cycle-accurate models;
-- dynamic switching of simulation detail by ROI, PC range, process, VM, or trigger;
+- dynamic switching of simulation detail by ROI, PC range, process, VM, instruction class, component,
+  or trigger;
 - a BOOM-like out-of-order baseline and experiments with advanced architecture papers;
-- cache coherence, NoC, DDR controller, PCIe Root Complex, IOMMU, and interrupts;
+- cache coherence, NoC, DDR controller, PCIe Root Complex, IOMMU, DMA, and interrupts;
 - Linux, the RISC-V Hypervisor extension, KVM, QEMU, and an L2 guest;
 - QEMU, Spike/NEMU, trace, synthetic, SystemC, and RTL frontends/backends;
-- differential testing, checkpoints, replay, statistics, and lifecycle traces.
+- differential testing, checkpoints, replay, statistics, and instruction lifecycle traces.
 
-GPU, NPU, and DPU internals are intentionally outside the main implementation scope; they can
-be connected through external simulator adapters later.
+GPU, NPU, and DPU internals are intentionally outside the main implementation scope. They may be
+connected through external simulator adapters while this project focuses on CPU, SoC, full-system,
+and virtualization mechanisms.
+
+The complete purpose, implementation scope, explicit non-goals, reference strategy, and design
+principles are defined in [docs/project-charter.md](docs/project-charter.md).
 
 ## Current milestone
 
-Milestone 0.1.0 provides a tested project baseline:
+**Milestone 0.2 — simulation time and event semantics**
 
-- deterministic event queue;
-- component base class;
-- memory-mapped address space;
-- simple little-endian RAM;
-- ROI and operation statistics;
-- MMIO magic device;
-- a deliberately functional `SimpleCore`;
-- CMake presets, tests, formatting, static-analysis configuration, scripts, and CI.
+Completed so far:
 
-This milestone is **not** a performance predictor. It establishes the software and simulation
-semantics on which later timing and cycle models will be built.
+- clean v0.1.0 project foundation;
+- deterministic callback event queue baseline;
+- explicit `EventStamp` representation;
+- deterministic ordering by `tick -> phase -> delta -> sequence`;
+- focused ordering tests.
+
+In progress:
+
+- `ClockDomain` period, offset, and edge calculations.
+
+See:
+
+- [docs/roadmap.md](docs/roadmap.md) for milestone sequencing;
+- [docs/progress-log.md](docs/progress-log.md) for the persistent current state;
+- [docs/architecture.md](docs/architecture.md) for implemented simulation semantics.
+
+## Progress-log rule
+
+Every meaningful implementation commit must update `docs/progress-log.md` in the same commit. The
+entry records:
+
+- what behavior now exists;
+- why the design was chosen;
+- how it was validated;
+- the next smallest step.
+
+This keeps project continuity in the repository instead of depending on chat history or memory.
 
 ## Build
 
@@ -63,23 +86,33 @@ ctest --test-dir build --output-on-failure
 ./scripts/format.sh
 ```
 
-CLion will detect the repository-level `.clang-format`. Use **Code → Reformat Code** or
+CLion will detect the repository-level `.clang-format`. Use **Code -> Reformat Code** or
 `Ctrl+Alt+L`.
 
-All project headers use standard `#ifndef/#define/#endif` include guards. The project does not
-mix them with `#pragma once`.
+All project headers use standard `#ifndef/#define/#endif` include guards. The project does not mix
+them with `#pragma once`.
 
 ## Layout
 
 ```text
 app/                executable demo
 cmake/              shared CMake helpers
-docs/               architecture, roadmap, and coding rules
+docs/               charter, architecture, roadmap, progress, and coding rules
 include/archlab/     public headers
 src/                 library implementation
 tests/               dependency-free unit tests
 scripts/             format and verification helpers
 ```
+
+## Development method
+
+The project uses small, testable steps and a Feynman-style learning loop:
+
+1. explain why the mechanism is needed;
+2. predict what fails without it;
+3. build the smallest experiment;
+4. explain the observed behavior;
+5. implement the production version.
 
 ## License
 
