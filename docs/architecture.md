@@ -20,9 +20,29 @@ Milestone 0.2 has introduced an explicit `EventStamp` representation ordered by:
 tick -> phase -> delta -> sequence
 ```
 
-The ordering type and its tests exist, but the callback `EventQueue` has not yet been fully migrated
-to this richer timestamp. Until that migration is complete, code must not assume that every queued
-callback already observes phase or delta semantics.
+The ordering type and its registered tests exist, but the callback `EventQueue` has not yet been fully
+migrated to this richer timestamp. Until that migration is complete, code must not assume that every
+queued callback already observes phase or delta semantics.
+
+## Clock domains
+
+A `ClockDomain` is a pure clock-edge calculator. For positive period `P` and offset `O`, its
+representable edges are:
+
+```text
+O, O + P, O + 2P, ...
+```
+
+It does not schedule unconditional per-cycle callbacks. Components query it only when an interface or
+state transition needs a clock boundary.
+
+The two edge queries deliberately encode different receiver contracts:
+
+- `edge_at_or_after(t)` is inclusive and returns `t` when `t` is already an edge;
+- `next_edge_after(t)` is strict and always returns an edge later than `t` when `t` is an edge.
+
+For times before the first edge, both queries return the offset. A zero period is invalid, and a query
+throws `std::overflow_error` when the required future edge cannot be represented by `Tick`.
 
 ## Functional path
 
