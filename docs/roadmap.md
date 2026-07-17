@@ -20,15 +20,17 @@ Completed:
 
 - explicit event timestamp representation;
 - deterministic ordering by `tick -> phase -> delta -> sequence`;
-- focused ordering tests.
+- registered tests covering every timestamp-ordering field;
+- `ClockDomain` period, offset, and edge detection;
+- inclusive `edge_at_or_after()` and strict `next_edge_after()` boundary semantics;
+- overflow checks for unrepresentable future clock edges.
 
 In progress and remaining:
 
-- `ClockDomain` period and phase-offset calculations;
-- `next_edge_after()` and `edge_at_or_after()` boundary semantics;
+- migrate the callback event queue to explicit event timestamps;
 - typed events in addition to compatibility callbacks;
 - component identifiers;
-- scheduling-to-the-past checks;
+- scheduling-to-the-past checks for the richer timestamp model;
 - zero-delay-loop protection;
 - event trace and checkpoint-friendly event representation;
 - clocked-component active/idle wakeup behavior.

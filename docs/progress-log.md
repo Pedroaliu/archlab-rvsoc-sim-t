@@ -31,20 +31,55 @@ Completed:
 - clean v0.1.0 project foundation;
 - deterministic callback event queue baseline;
 - `EventStamp` ordering by `tick -> phase -> delta -> sequence`;
-- focused tests for phase, delta, and sequence ordering.
+- registered tests covering tick, phase, delta, and sequence ordering;
+- `ClockDomain` period, offset, edge detection, inclusive/strict edge queries, and overflow checks.
 
 In progress:
 
-- `ClockDomain` with period, offset, `next_edge_after()`, and `edge_at_or_after()`.
+- migrate the callback `EventQueue` to explicit `EventStamp` semantics while retaining a compatibility
+  callback API.
 
 Next:
 
-- finish and test `ClockDomain`;
-- migrate `EventQueue` to explicit event-time semantics;
-- define scheduling-to-the-past checks;
-- add clocked-component wake/sleep behavior.
+- define the richer scheduling API and current-stamp rules;
+- migrate queue ordering from `Tick + sequence` to `EventStamp`;
+- preserve scheduling-to-the-past checks across tick, phase, and delta;
+- add zero-delay-loop protection and clocked-component wake/sleep behavior.
 
 ## Commit history
+
+### `pending` — Clock-domain edge semantics
+
+Milestone: 0.2
+
+What changed:
+
+- added a pure `ClockDomain` abstraction with a positive period and phase offset;
+- defined edges as `offset + n * period` for non-negative `n`;
+- added `is_edge()`, inclusive `edge_at_or_after()`, and strict `next_edge_after()` queries;
+- rejected zero-period clocks and detected future edges that overflow `Tick`;
+- registered the timestamp-ordering test with the repository test runner and expanded it to cover all
+  four `EventStamp` fields.
+
+Why:
+
+- asynchronous responses need an explicit receiver-side choice between accepting an edge at the same
+  tick and waiting for the following edge;
+- clock arithmetic must remain independent from event generation so idle components do not require
+  unconditional per-cycle polling;
+- the earlier timestamp test file compiled but was not registered, so the intended ordering checks
+  were not actually executed by the test runner.
+
+Validation:
+
+- focused C++20 compilation passed with the repository warning set promoted to errors;
+- four focused timestamp and clock-domain tests passed;
+- GitHub Actions `ci` run 19 completed configure, build, and test steps successfully.
+
+Next step:
+
+- migrate the callback event queue to explicit `EventStamp` ordering without breaking the existing
+  `schedule_abs(Tick, ...)` compatibility path.
 
 ### `65e9631` — Event timestamp ordering
 
@@ -54,7 +89,7 @@ What changed:
 
 - added simulation-time types and `EventStamp`;
 - established deterministic lexicographic ordering by tick, phase, delta, and sequence;
-- added tests proving that earlier fields dominate later fields.
+- added an initial test source for phase and delta ordering.
 
 Why:
 
@@ -64,7 +99,8 @@ Why:
 Validation:
 
 - project compiled successfully;
-- all unit tests passed.
+- the test source compiled, but its function was not registered with the test runner; the clock-domain
+  change records and fixes that gap.
 
 Next step:
 

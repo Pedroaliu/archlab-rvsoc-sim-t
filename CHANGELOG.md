@@ -5,7 +5,9 @@
 ### Added
 
 - Added `EventStamp` ordering by tick, phase, delta, and sequence.
-- Added focused tests for timestamp ordering semantics.
+- Added registered tests covering every `EventStamp` ordering field.
+- Added `ClockDomain` period, offset, edge detection, inclusive/strict edge queries, and overflow
+  checks.
 - Added a persistent project charter defining purpose, scope, boundaries, references, and design
   principles.
 - Added a progress log that must be updated with meaningful implementation commits.
@@ -13,7 +15,7 @@
 ### In progress
 
 - Milestone 0.2 simulation-time and event semantics.
-- `ClockDomain` period, offset, and edge calculations.
+- Migration of the callback event queue to explicit event timestamps.
 
 ## 0.1.0
 

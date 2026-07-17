@@ -37,11 +37,12 @@ Completed so far:
 - deterministic callback event queue baseline;
 - explicit `EventStamp` representation;
 - deterministic ordering by `tick -> phase -> delta -> sequence`;
-- focused ordering tests.
+- registered ordering tests;
+- `ClockDomain` period, offset, edge detection, inclusive/strict edge queries, and overflow checks.
 
 In progress:
 
-- `ClockDomain` period, offset, and edge calculations.
+- migration of the callback event queue to explicit event timestamps.
 
 See:
 
