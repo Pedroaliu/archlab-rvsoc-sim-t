@@ -1,7 +1,7 @@
 #ifndef ARCHLAB_RVSOC_SIM_INCLUDE_ARCHLAB_SIM_KERNEL_EVENT_QUEUE_H_
 #define ARCHLAB_RVSOC_SIM_INCLUDE_ARCHLAB_SIM_KERNEL_EVENT_QUEUE_H_
 
-#include "archlab/sim/types.h"
+#include "archlab/sim/kernel/sim_time.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -36,7 +36,19 @@ public:
     EventQueue& operator=(EventQueue&&) = delete;
 
     [[nodiscard]] EventId schedule_abs(Tick when, std::string name, Callback callback);
+    [[nodiscard]] EventId schedule_abs(Tick when,
+                                       EventPhase phase,
+                                       Delta delta,
+                                       std::string name,
+                                       Callback callback);
+
     [[nodiscard]] EventId schedule_after(Tick delay, std::string name, Callback callback);
+    [[nodiscard]] EventId schedule_after(Tick delay,
+                                         EventPhase phase,
+                                         Delta delta,
+                                         std::string name,
+                                         Callback callback);
+
     [[nodiscard]] bool cancel(EventId event_id);
 
     void run();
@@ -51,8 +63,7 @@ public:
 
 private:
     struct Event {
-        Tick when{};
-        std::uint64_t sequence{};
+        EventStamp stamp{};
         EventId id{};
         std::string name;
         Callback callback;
@@ -64,11 +75,13 @@ private:
                                       const std::shared_ptr<Event>& rhs) const noexcept;
     };
 
+    void validate_schedule_stamp(const EventStamp& stamp) const;
     void discard_cancelled_events();
     void execute_next_event();
 
     Tick now_{};
-    std::uint64_t next_sequence_{};
+    std::optional<EventStamp> last_executed_stamp_{};
+    Sequence next_sequence_{};
     std::uint64_t next_event_id_{1};
     bool trace_enabled_{};
     std::size_t live_event_count_{};
