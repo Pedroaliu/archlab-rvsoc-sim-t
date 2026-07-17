@@ -8,26 +8,44 @@
 namespace archlab::sim {
 
 bool EventQueue::EarlierEvent::operator()(const std::shared_ptr<Event>& lhs,
-                                          const std::shared_ptr<Event>& rhs) const noexcept
+                                           const std::shared_ptr<Event>& rhs) const noexcept
 {
-    if (lhs->when != rhs->when) {
-        return lhs->when > rhs->when;
-    }
-    return lhs->sequence > rhs->sequence;
+    return lhs->stamp > rhs->stamp;
 }
 
 EventQueue::EventId EventQueue::schedule_abs(Tick when, std::string name, Callback callback)
 {
-    if (when < now_) {
-        throw std::invalid_argument("cannot schedule an event in the simulated past");
-    }
+    return schedule_abs(
+        when, EventPhase::Input, Delta{0}, std::move(name), std::move(callback));
+}
+
+EventQueue::EventId EventQueue::schedule_abs(Tick when,
+                                              EventPhase phase,
+                                              Delta delta,
+                                              std::string name,
+                                              Callback callback)
+{
     if (!callback) {
         throw std::invalid_argument("event callback must be valid");
     }
 
+    const EventStamp stamp{
+        .tick = when,
+        .phase = phase,
+        .delta = delta,
+        .sequence = next_sequence_,
+    };
+    validate_schedule_stamp(stamp);
+
     const EventId event_id{next_event_id_++};
-    auto event = std::make_shared<Event>(
-        Event{when, next_sequence_++, event_id, std::move(name), std::move(callback), false});
+    auto event = std::make_shared<Event>(Event{
+        .stamp = stamp,
+        .id = event_id,
+        .name = std::move(name),
+        .callback = std::move(callback),
+        .cancelled = false,
+    });
+    ++next_sequence_;
 
     events_.push(event);
     live_events_.emplace(event_id.value, event);
@@ -35,12 +53,25 @@ EventQueue::EventId EventQueue::schedule_abs(Tick when, std::string name, Callba
     return event_id;
 }
 
-EventQueue::EventId EventQueue::schedule_after(Tick delay, std::string name, Callback callback)
+EventQueue::EventId EventQueue::schedule_after(Tick delay,
+                                                std::string name,
+                                                Callback callback)
+{
+    return schedule_after(
+        delay, EventPhase::Input, Delta{0}, std::move(name), std::move(callback));
+}
+
+EventQueue::EventId EventQueue::schedule_after(Tick delay,
+                                                EventPhase phase,
+                                                Delta delta,
+                                                std::string name,
+                                                Callback callback)
 {
     if (delay > std::numeric_limits<Tick>::max() - now_) {
         throw std::overflow_error("event time overflow");
     }
-    return schedule_abs(now_ + delay, std::move(name), std::move(callback));
+    return schedule_abs(
+        now_ + delay, phase, delta, std::move(name), std::move(callback));
 }
 
 bool EventQueue::cancel(EventId event_id)
@@ -77,7 +108,10 @@ void EventQueue::run_until(Tick limit)
         execute_next_event();
     }
 
-    now_ = limit;
+    if (limit > now_) {
+        now_ = limit;
+        last_executed_stamp_.reset();
+    }
 }
 
 Tick EventQueue::now() const noexcept
@@ -101,12 +135,25 @@ std::optional<Tick> EventQueue::next_tick()
     if (events_.empty()) {
         return std::nullopt;
     }
-    return events_.top()->when;
+    return events_.top()->stamp.tick;
 }
 
 void EventQueue::enable_trace(bool enabled) noexcept
 {
     trace_enabled_ = enabled;
+}
+
+void EventQueue::validate_schedule_stamp(const EventStamp& stamp) const
+{
+    if (stamp.tick < now_) {
+        throw std::invalid_argument("cannot schedule an event in the simulated past");
+    }
+
+    if (last_executed_stamp_.has_value() && stamp.tick == now_ &&
+        last_executed_stamp_->tick == now_ && stamp < *last_executed_stamp_) {
+        throw std::invalid_argument(
+            "cannot schedule an event before the current phase or delta");
+    }
 }
 
 void EventQueue::discard_cancelled_events()
@@ -128,10 +175,15 @@ void EventQueue::execute_next_event()
 
     live_events_.erase(event->id.value);
     --live_event_count_;
-    now_ = event->when;
+    now_ = event->stamp.tick;
+    last_executed_stamp_ = event->stamp;
 
     if (trace_enabled_) {
-        std::clog << "[event] tick=" << now_ << " name=\"" << event->name << "\"\n";
+        std::clog << "[event] tick=" << event->stamp.tick
+                  << " phase=" << static_cast<unsigned int>(event->stamp.phase)
+                  << " delta=" << event->stamp.delta
+                  << " sequence=" << event->stamp.sequence << " name=\"" << event->name
+                  << "\"\n";
     }
 
     event->callback();
